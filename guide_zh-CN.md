@@ -103,10 +103,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```go
     t := []string{}
     ```
-6. Go中的变量名应该短而不是长。 对于范围有限的局部变量尤其如此。 将c首选为lineCount。 我更喜欢sliceIndex。
-
-基本规则：名称声明越远，使用的名称就越具有描述性。 对于方法接收者，一个或两个字母就足够了。 诸如循环索引和读取器之类的常见变量可以是单个字母（i，r）。 更多不寻常的事物和全局变量需要更多描述性名称。
-7. 命令行的flag如果由多个词组成，应该用"-"，而不是"_"。 [[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)]
+6. 命令行的flag如果由多个词组成，应该用"-"，而不是"_"。 [[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)]
 
 ## Guidelines
 1. 函数的Receiver究竟是用值还是用指针（`func (t T) foo()` or `func (t *T) foo()`），请遵循这个规范： https://github.com/golang/go/wiki/CodeReviewComments#receiver-type
