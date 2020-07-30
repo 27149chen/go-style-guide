@@ -22,7 +22,9 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 
     而这些则不推荐：
     - "UrlPolicy"，"ServeHttp"，"XmlHTTPRequest"，"appId"，"oAuthEnabled"，"gitHubToken"
-11. 对某些单词使用一致的拼写。 [[1](https://github.com/golang/go/wiki/Spelling)]
+11. 变量的名称应该尽可能简短。基本规则：变量的使用离声明越远，取名就应该越具有描述性。越近，取名就应该越简短，尤其是那些作用域很小的变量，一个或两个字母就足够了。对于方法接收者，一个或两个字母就足够了。诸如循环索引和读取器之类的常见变量可以是单个字母（i，r）。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#variable-names)]
+> 注意：请不要滥用这条规则，简短的前提是可读性。
+12. 对某些单词使用一致的拼写。 [[1](https://github.com/golang/go/wiki/Spelling)]
     
     应该这样写：
     - "marshaling"，"unmarshaling"，"canceling"，"canceled"，"cancellation"
@@ -37,13 +39,83 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```
     func F(ctx context.Context, /* other arguments */) {}
     ```
-2. 命令行的flag如果由多个词组成，应该用"-"，而不是"_"。 [[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)]
+2. 代码应通过尽可能早地处理错误或者特殊情况并尽早返回或继续循环来减少嵌套。 
+
+    应该：
+    ```go
+    for _, v := range data {
+        if v.F1 != 1 {
+            log.Printf("Invalid v: %v", v)
+            continue
+        }
+  
+        v = process(v)
+        if err := v.Call(); err != nil {
+            return err
+        }
+        v.Send()
+    }
+    ```
+
+    不应该：
+    ```go
+    for _, v := range data {
+        if v.F1 == 1 {
+            v = process(v)
+            if err := v.Call(); err == nil {
+                v.Send()
+            } else {
+                return err
+            }
+        } else {
+            log.Printf("Invalid v: %v", v)
+        }
+    }
+    ```
+3. 避免不必要的`else`。
+
+    应该：
+    ```go
+    a := 10
+    if b {
+        a = 100
+    }
+    ```
+
+    不应该：
+    ```go
+    var a int
+    if b {
+        a = 100
+    } else {
+        a = 10
+    }
+    ```
+4. 使用字段名初始化Struct。初始化Struct时，应该始终指定字段的名称。 您可以通过[`go vet`](https://golang.org/cmd/vet/)来执行这项检查。
+5. 声明一个空的Slice时不需要初始化。大多数情况下，在定义一个空的Slice时不需要进行初始化，只需保持默认值nil。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices)]
+
+     应该：
+    ```go
+    var t []string
+    ```
+
+    不应该：
+    ```go
+    t := []string{}
+    ```
+6. Go中的变量名应该短而不是长。 对于范围有限的局部变量尤其如此。 将c首选为lineCount。 我更喜欢sliceIndex。
+
+基本规则：名称声明越远，使用的名称就越具有描述性。 对于方法接收者，一个或两个字母就足够了。 诸如循环索引和读取器之类的常见变量可以是单个字母（i，r）。 更多不寻常的事物和全局变量需要更多描述性名称。
+7. 命令行的flag如果由多个词组成，应该用"-"，而不是"_"。 [[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)]
 
 ## Guidelines
-1. 函数的Receiver究竟是用值还是用指针，请严格按照这个规范： https://github.com/golang/go/wiki/CodeReviewComments#receiver-type
+1. 函数的Receiver究竟是用值还是用指针（`func (t T) foo()` or `func (t *T) foo()`），请遵循这个规范： https://github.com/golang/go/wiki/CodeReviewComments#receiver-type
+2. Map，Slice等常见类型都不是并发安全的，要保证并发安全，请使用lock，channel等手段。您也可以使用`sync.Map`这个并发安全的Map，和`sync/atomic`这个包提供的原子方法。
+3. 当您使用goroutine时，您必须清楚它是否会退出，以及什么时候退出。一般情况下，您应该通过WaitGroup或者channel等方式，在函数返回前等待里面的goroutine先退出。如果您想在函数返回后使里面的goroutine保持运行，您必须通过context或者channel等方式，确保在需要关闭这个goroutine时，可以控制它的关闭。否则，容易造成资源泄露。
+4. 在大多数情况下，请不要使用`_`来忽略一个error，您应该处理或者返回这个error。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#handle-errors)]
 
 ## Performance
-> 注意：对于使用频率不高，性能要求不高或者逻辑比较简单的代码，性能方面的要求不是必需的。性能优化只有在出现性能瓶颈时才需要重点考虑。届时，请着重关注这里列的注意点。
+> 注意：对于使用频率较低，性能要求不高或者逻辑比较简单的代码，应该优先遵循风格方面的要求，性能方面的要求不是必需的。性能优化只有在出现性能瓶颈时才需要重点考虑。届时，请着重关注这里列的注意点。
 
 1. 优先选用strconv而不是fmt来做字符串转换，因为前者性能更好。
 
