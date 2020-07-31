@@ -7,7 +7,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 ## Naming
 1. package的名字必须是全小写的形式，不能出现 "-"，"_" 等分隔符。[[1](https://golang.org/doc/effective_go.html#package-names)] [[2](https://blog.golang.org/package-names)] [[3](https://rakyll.org/style-packages/)] [[4](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[5](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
 2. package的名字必须是名词，而且应该是单数，包括那些集合性质的package，比如"net/url"，"example"，"image"，"player"。 [[1](https://dmitri.shuralyov.com/idiomatic-go#use-singular-form-for-collection-repo-folder-name)] [[2](https://rakyll.org/style-packages/)] [[3](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
-3. package的名字应该简洁且能体现代码的内容，但需要尽量避免无意义的名称，比如util，common，misc，api，types和interfaces等。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[2](https://golang.org/doc/effective_go.html#package-names)] [[3](https://blog.golang.org/package-names)] [[4](https://rakyll.org/style-packages/)] [[5](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
+3. package的名字应该简洁且能体现代码的内容，但需要尽量避免无意义的名称，比如"util"，"common"，"misc"，"api"，"types"和"interfaces"等。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[2](https://golang.org/doc/effective_go.html#package-names)] [[3](https://blog.golang.org/package-names)] [[4](https://rakyll.org/style-packages/)] [[5](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
 4. package的命名和type的命名应该尽量避免冗余。比如应该叫做"controllers/autoscaler"而不是"controllers/autoscalercontroller"，应该叫做"chubby.File"而不是"chubby.ChubbyFile"，应该叫做"storage.Interface"而不是"storage.StorageInterface"。比如您有一个意义很明确的timer模块，应该定义"timer.New"而不是"timer.NewTimer"。[[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[3](https://blog.golang.org/package-names)]
 5. 除非有特殊的理由，go文件中的package的名字应该与他所在的路径的名字一致。比如文件`foo/bar.go`中的第一行，应该是`package foo`。
 6. 在import一个package时，尽量不要定义别名，除非出现冲突。在出现两个包名相同时，优先为the most local or project-specific的package定义别名。[[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
@@ -110,6 +110,112 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 2. Map，Slice等常见类型都不是并发安全的，要保证并发安全，请使用lock，channel等手段。您也可以使用`sync.Map`这个并发安全的Map，和`sync/atomic`这个包提供的原子方法。
 3. 当您使用goroutine时，您必须清楚它是否会退出，以及什么时候退出。一般情况下，您应该通过WaitGroup或者channel等方式，在函数返回前等待里面的goroutine先退出。如果您想在函数返回后使里面的goroutine保持运行，您必须通过context或者channel等方式，确保在需要关闭这个goroutine时，可以控制它的关闭。否则，容易造成资源泄露。
 4. 在大多数情况下，请不要使用`_`来忽略一个error，您应该处理或者返回这个error。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#handle-errors)]
+5. 一个Interface为nil与在这个Interface中具有nil指针不一样。因为一个Interface包含了某个Struct的类型和它的指针，指针为nil只是代表这个Struct还没有初始化（分配内存地址），这个Inferface已经不是nil了。
+
+    比如：
+    ```
+    func returnsError() error {
+	    var p *MyError = nil
+	    if bad() {
+		    p = ErrBad
+	    }
+	    return p // Will always return a non-nil error.
+    }
+    ```
+    虽然这里p可能为nil，但error永远不可能为nil，因为这里error就是一个Interface。
+6. 在函数中复制Slice和Map以消除影响。Slice和Map都是引用类型，外部的修改会影响到函数里面的结果，所有如果你不需要这种效果，应该在函数中复制一份新的数据。
+
+    比如：
+    ```
+    func (d *Driver) SetTrips(trips []Trip) {
+        d.trips = trips
+    }
+
+    trips := ...
+    d1.SetTrips(trips)
+
+    // Did you mean to modify d1.trips?
+    trips[0] = ...
+    ```
+    ```
+    func (d *Driver) SetTrips(trips []Trip) {
+        d.trips = make([]Trip, len(trips))
+        copy(d.trips, trips)
+    }
+
+    trips := ...
+    d1.SetTrips(trips)
+
+    // We can now modify trips[0] without affecting d1.trips.
+    trips[0] = ...
+    ```
+    再比如：
+    ```
+    type Stats struct {
+        mu sync.Mutex
+        counters map[string]int
+    }
+
+    // Snapshot returns the current stats.
+    func (s *Stats) Snapshot() map[string]int {
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        return s.counters
+    }
+
+    // snapshot is no longer protected by the mutex, so any
+    // access to the snapshot is subject to data races.
+    snapshot := stats.Snapshot()
+    ```
+    ```
+    type Stats struct {
+        mu sync.Mutex
+        counters map[string]int
+    }
+
+    func (s *Stats) Snapshot() map[string]int {
+        s.mu.Lock()
+        defer s.mu.Unlock()
+
+        result := make(map[string]int, len(s.counters))
+        for k, v := range s.counters {
+            result[k] = v
+        }
+        return result
+    }
+
+    // Snapshot is now a copy.
+    snapshot := stats.Snapshot()
+    ```
+7. 避免一些常见的Go语言陷阱。
+    
+    应该：
+    ```go
+    nums := [1, 2, 3]
+    for _, num := range nums {
+        go func(num int) {
+            fmt.Printf(num)
+        }(num)
+    }
+    
+    // Output: 1, 2, 3
+    ```
+
+    不应该：
+    ```go
+    nums := [1, 2, 3]
+    for _, num := range nums {
+        go func() {
+            fmt.Printf(num)
+        }()
+    }
+    
+    // Output: 3, 3, 3
+    ```
+
+## Errors
+1. 
 
 ## Performance
 > 注意：对于使用频率较低，性能要求不高或者逻辑比较简单的代码，应该优先遵循风格方面的要求，性能方面的要求不是必需的。性能优化只有在出现性能瓶颈时才需要重点考虑。届时，请着重关注这里列的注意点。
@@ -138,6 +244,8 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```go
     make(map[T1]T2, 100)
     ```
+3. 避免在延迟敏感的代码中使用JSON。Go的`encoding/json`库依赖反射机制来marshal和unmarshal一个Struct，而反射通常会很慢。可以使用[ffjson](https://github.com/pquerna/ffjson)来优化JSON，也可以使用Protocol Buffers或者MessagePack来替换JSON。
+4. 避免使用`+`来连接两个字符串。因为Go中的string是不可变的(immutable)，每次连接都会创建一个新的字符串。建议使用`bytes.Buffer`或者`strings.Builder`。
 
 ## Comments
 1. comments应该是完整的句子，以句号结尾。这样做可以在使用godoc生成文档时呈现良好的格式。
@@ -179,3 +287,18 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     // Sample helloworld demonstrates how to use x.
     package main
     ```
+    
+    ## Tools
+    1. `gofmt`: 自动格式化代码，保证所有的代码与官方推荐的格式保持一致。
+    2. `goimports`: 支持所有`gofmt`的功能，另外还可以规范化import行的写法。
+    3. `go vet`: 用于检查代码中的静态错误。
+    4. `go tool vet`: 用于报告可疑的代码编写问题。
+    5. `go build -race`: 在build的时候加上`-race`这个参数，可以执行代码的竞态条件检查，发现潜在的并发安全问题。 [[1](https://blog.golang.org/race-detector)]
+    6. `golint`: 一个更严格的代码风格检查工具，可以检查出大部分本规范中的代码风格问题。
+    
+    ## Other References
+    1. https://golang.org/doc/effective_go.html
+    2. https://github.com/golang/go/wiki/CodeReviewComments
+    3. https://golang.org/doc/faq
+    4. https://github.com/uber-go/guide/blob/master/style.md
+    5. http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/
