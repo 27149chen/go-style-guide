@@ -1,3 +1,14 @@
+- [Go Style Guide](#go-style-guide)
+  * [Go Project Layout](#go-project-layout)
+  * [Naming](#naming)
+  * [Style](#style)
+  * [Guidelines](#guidelines)
+  * [Errors](#errors)
+  * [Performance](#performance)
+  * [Comments](#comments)
+  * [Tools](#tools)
+  * [Other References](#other-references)
+
 # Go Style Guide
 
 ## Go Project Layout
@@ -215,8 +226,104 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```
 
 ## Errors
-1. 
+1. Go中有几种生成error的方式，比如`errors.New`，`fmt.Errorf`和自定义类型等。如果您只需要一个简单的错误字符串，可以用`errors.New`和`fmt.Errorf`，如果您需要在error里面包含更多的信息，可以使用自定义类型。
+2. 永远不要通过检查错误字符串中的关键字的形式来判断一个特定错误。
 
+    如果是通过`errors.New`和`fmt.Errorf`生成的错误，可以把它定义成一个全局的常量，然后直接判断是否相等：
+    ```
+    // package foo
+
+    var ErrCouldNotOpen = errors.New("could not open")
+
+    func Open() error {
+        return ErrCouldNotOpen
+    }
+
+    // package bar
+
+    if err := foo.Open(); err != nil {
+        if err == foo.ErrCouldNotOpen {
+            // handle
+        }
+    }
+    ```
+    如果是自定义类型，可以通过类型断言的形式来判断：
+    ```
+    type errNotFound struct {
+        file string
+    }
+
+    func (e errNotFound) Error() string {
+        return fmt.Sprintf("file %q not found", e.file)
+    }
+
+    func open(file string) error {
+        return errNotFound{file: file}
+    }
+
+    func use() {
+        if err := open("testfile.txt"); err != nil {
+            if _, ok := err.(errNotFound); ok {
+                // handle
+            }
+        }
+    }
+    ```
+3. 尽量避免在不同的package之间使用上述方式，因为这会暴露额外的公共API，造成package之间更强的耦合。一个更好的做法是只暴露匹配方法。
+
+    比如：
+    ```
+    // package foo
+
+    type errNotFound struct {
+        file string
+    }
+
+    func (e errNotFound) Error() string {
+        return fmt.Sprintf("file %q not found", e.file)
+    }
+
+    func IsNotFoundError(err error) bool {
+        _, ok := err.(errNotFound)
+        return ok
+    }
+
+    func Open(file string) error {
+        return errNotFound{file: file}
+    }
+
+    // package bar
+
+    if err := foo.Open("foo"); err != nil {
+        if foo.IsNotFoundError(err) {
+            // handle
+        }
+    }
+    ```
+4. 自定义错误类型可以封装更底层的错误。在Go 1.13+中，可以使用Unwrap方法返回底层错误。比如：
+    ```
+    type QueryError struct {
+        Query string
+        Err error
+    }
+
+    func (e *QueryError) Unwrap() error { return e.Err }
+    ```
+    可以使用errors包的Is和As方法来检查错误。这两个方法，不光会检查当前类型，还会调用Unwrap方法，来检查错误链中的所有类型。比如：
+    ```
+    // Similar to:
+    // if err == ErrNotFound { … }
+    if errors.Is(err, ErrNotFound) {
+        // something wasn't found
+    }
+
+    // Similar to:
+    // if e, ok := err.(*QueryError); ok { … }
+    var e *QueryError
+    if errors.As(err, &e) {
+        // err is a *QueryError, and e is set to the error's value
+    }
+    ```
 ## Performance
 > 注意：对于使用频率较低，性能要求不高或者逻辑比较简单的代码，应该优先遵循风格方面的要求，性能方面的要求不是必需的。性能优化只有在出现性能瓶颈时才需要重点考虑。届时，请着重关注这里列的注意点。
 
@@ -288,17 +395,17 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     package main
     ```
     
-    ## Tools
-    1. `gofmt`: 自动格式化代码，保证所有的代码与官方推荐的格式保持一致。
-    2. `goimports`: 支持所有`gofmt`的功能，另外还可以规范化import行的写法。
-    3. `go vet`: 用于检查代码中的静态错误。
-    4. `go tool vet`: 用于报告可疑的代码编写问题。
-    5. `go build -race`: 在build的时候加上`-race`这个参数，可以执行代码的竞态条件检查，发现潜在的并发安全问题。 [[1](https://blog.golang.org/race-detector)]
-    6. `golint`: 一个更严格的代码风格检查工具，可以检查出大部分本规范中的代码风格问题。
+## Tools
+1. `gofmt`: 自动格式化代码，保证所有的代码与官方推荐的格式保持一致。
+2. `goimports`: 支持所有`gofmt`的功能，另外还可以规范化import行的写法。
+3. `go vet`: 用于检查代码中的静态错误。
+4. `go tool vet`: 用于报告可疑的代码编写问题。
+5. `go build -race`: 在build的时候加上`-race`这个参数，可以执行代码的竞态条件检查，发现潜在的并发安全问题。 [[1](https://blog.golang.org/race-detector)]
+6. `golint`: 一个更严格的代码风格检查工具，可以检查出大部分本规范中的代码风格问题。
     
-    ## Other References
-    1. https://golang.org/doc/effective_go.html
-    2. https://github.com/golang/go/wiki/CodeReviewComments
-    3. https://golang.org/doc/faq
-    4. https://github.com/uber-go/guide/blob/master/style.md
-    5. http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/
+## Other References
+1. https://golang.org/doc/effective_go.html
+2. https://github.com/golang/go/wiki/CodeReviewComments
+3. https://golang.org/doc/faq
+4. https://github.com/uber-go/guide/blob/master/style.md
+5. http://devs.cloudimmunity.com/gotchas-and-common-mistakes-in-go-golang/
