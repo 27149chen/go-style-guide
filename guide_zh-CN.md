@@ -22,7 +22,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 4. package 的命名和 type 的命名应该尽量避免冗余。比如应该叫做 "controller/autoscaler" 而不是 "controller/autoscalercontroller"，应该叫做 "chubby.File" 而不是 "chubby.ChubbyFile"，应该叫做 "storage.Interface" 而不是 "storage.StorageInterface"。比如你有一个意义很明确的 timer 模块，应该定义 "timer.New" 而不是 "timer.NewTimer"。[[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[3](https://blog.golang.org/package-names)]
 5. 除非有特殊的理由，Go 文件中的 package 的名字应该与他所在的路径的名字一致。比如文件 `foo/bar.go` 中的第一行，应该是 `package foo`。
 6. 在 import 一个 package 时，尽量不要定义别名，除非出现冲突。在出现两个包名相同时，优先为 the most local or project-specific 的 package 定义别名。[[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
-7. 导入是按组组织的，它们之间有空白行。 标准库软件包始终在第一组中。import应该按照相似原则分组，中间用空行分隔。比如标准库为一组，第三方库为一组，本地库为一组。标准库始终在第一组中（[goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) 和一些 IDE 会帮你完成这一工作）。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
+7. 导入是按组组织的，它们之间有空白行。 标准库软件包始终在第一组中。import 应该按照相似原则分组，中间用空行分隔。比如标准库为一组，第三方库为一组，本地库为一组。标准库始终在第一组中（[goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) 和一些 IDE 会帮你完成这一工作）。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
 8. Go 的命名风格是 MixedCaps 和 mixedCaps，不使用下划线式的命名风格。其中前者可在 package 外被访问，后者只能在 package 内被访问。
 9. 上一条的命名风格，同样适用于定义常量。比如你应该定义 maxLength 或者 MaxLength，而不是 MAX_LENGTH。[[1](https://github.com/golang/go/wiki/CodeReviewComments#mixed-caps)]
 10. 对于存在两个以上大写字母的缩写词或者组合词，在需要大写时应该使用惯用写法（而不是首字母大写的写法），在需要小写时应该所有字母都小写。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#initialisms)] [[2](https://dmitri.shuralyov.com/idiomatic-go#for-brands-or-words-with-more-than-1-capital-letter-lowercase-all-letters)]
@@ -102,7 +102,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
         a = 10
     }
     ```
-4. 使用字段名初始化 Struct。初始化 Struct时，应该始终指定字段的名称。 你可以通过[`go vet`](https://golang.org/cmd/vet/)来执行这项检查。
+4. 使用字段名初始化 Struct。初始化 Struct 时，应该始终指定字段的名称。 你可以通过 [`go vet`](https://golang.org/cmd/vet/) 来执行这项检查。
 5. 声明一个空的 Slice 时不需要初始化。大多数情况下，在定义一个空的 Slice 时不需要进行初始化，只需保持默认值 nil。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices)]
 
      应该：
@@ -121,7 +121,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 2. Map，Slice 等常见类型都不是并发安全的，要保证并发安全，请使用 lock，channel 等手段。你也可以使用 `sync.Map` 这个并发安全的Map，和 `sync/atomic` 这个包提供的原子方法。
 3. 当你使用 goroutine 时，你必须清楚它是否会退出，以及什么时候退出。一般情况下，你应该通过 WaitGroup 或者 channel 等方式，在函数返回前等待里面的 goroutine 先退出。如果你想在函数返回后使里面的 goroutine 保持运行，你必须通过 context 或者 channel 等方式，确保在需要关闭这个 goroutine 时，可以控制它的关闭。否则，容易造成资源泄露。
 4. 在大多数情况下，请不要使用 `_` 来忽略一个 error，你应该处理或者返回这个 error。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#handle-errors)]
-5. 一个 Interface 为 nil 与在这个 Interface 中含有 nil 指针不一样。因为一个 Interface 包含了某个 Struct 的类型和它的指针，指针为 nil 只是代表这个 Struct 还没有初始化（分配内存地址），这个 Interface 已经不是 nil 了。
+5. 一个 Interface 为 nil 与在这个 Interface 中含有 nil 指针不一样。因为一个 Interface 包含了某个 Struct 的类型和它的指针，指针为 nil 只是代表这个 Struct 还没有初始化（分配内存地址），这个 Interface 本身已经不是 nil 了。
 
     比如：
     ```
@@ -133,7 +133,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 	    return p // Will always return a non-nil error.
     }
     ```
-    虽然这里 p 可能为 nil，但 error 永远不可能为 nil，因为这里 error 就是一个 Interface。
+    虽然这里 `p` 可能为 nil，但 `error` 永远不可能为 nil，因为这里 `error` 就是一个 Interface。
 6. 在函数中复制 Slice 和 Map 以消除影响。Slice 和 Map 都是引用类型，外部的修改会影响到函数里面的结果，所有如果你不需要这种效果，应该在函数中复制一份新的数据。
 
     比如：
@@ -352,11 +352,11 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     make(map[T1]T2, 100)
     ```
 3. 避免在延迟敏感的代码中使用 JSON。Go的 `encoding/json` 库依赖反射机制来 marshal 和 unmarshal 一个 Struct，而反射通常会很慢。可以使用 [ffjson](https://github.com/pquerna/ffjson) 来优化 JSON，也可以使用 Protocol Buffers 或者 MessagePack 来代替 JSON。
-4. 避免使用 `+` 来连接两个字符串。因为 Go 中的 string 是不可变的 (immutable)，每次连接都会创建一个新的字符串。建议使用 `bytes.Buffer` 或者`strings.Builder`。
+4. 避免使用 `+` 来连接两个字符串。因为 Go 中的 string 是不可变的 (immutable)，每次连接都会创建一个新的字符串。建议使用 `bytes.Buffer` 或者 `strings.Builder`。
 
 ## Comments
-1. comment应该是完整的句子，以句号结尾。这样做可以在使用 `godoc` 生成文档时呈现良好的格式。
-2. 对于 Struct 或者 Function，comments 应该以结构名或者函数名开头，作为整个 comment 的主语，就算它是动词形式的。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#comment-sentences)]
+1. comment 应该是完整的句子，以句号结尾。这样做可以在使用 `godoc` 生成文档时呈现良好的格式。
+2. 对于 Struct 或者 Function，comment 应该以结构名或者函数名开头，作为整个句子的主语，就算它是动词形式的。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#comment-sentences)]
 
     比如：
     ```
@@ -366,7 +366,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     // Encode writes the JSON encoding of req to w.
     func Encode(w io.Writer, req *Request) { ...
     ```
-3. 对于 package，comment 可以放在任意一个同 package 下的 Go 文件中，以 "Package {pkgname}" 开头。对于 main 包，则应该描述这个二进制包的作用。 [[1](https://rakyll.org/style-packages/)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-comments)]
+3. 对于 package，comment 可以放在任意一个同 package 下的 Go 文件中，以 "Package {pkgname}" 开头。对于 main 包，则应该描述这个二进制包的用途。 [[1](https://rakyll.org/style-packages/)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-comments)]
 
     比如：
     ```
