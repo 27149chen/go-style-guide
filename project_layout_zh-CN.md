@@ -18,7 +18,7 @@
 
 > 注意：
 > - 大部分情况下都不需要这个目录，除非确实有这个需求。
-> - 除了出现在项目的根目录下，internal 目录还可以出现在其他任何子目录下，只有和 internal 目录拥有相同父目录的包才能import这个目录下的包。比如包 `a/b/c/internal/d/e/f` 只能被目录 `a/b/c` 下的其他目录下的包import，而不能被 `a/b/d` 下的包 import [[3](https://golang.org/doc/go1.4#internalpackages)]。
+> - 除了出现在项目的根目录下，internal 目录还可以出现在其他任何子目录下，只有和 internal 目录拥有相同父目录的包才能import这个目录下的包。比如包 `a/b/c/internal/d/e/f` 只能被目录 `a/b/c` 下的其他目录下的包 import，而不能被 `a/b/d` 下的包 import [[3](https://golang.org/doc/go1.4#internalpackages)]。
 
 **scripts**: 这个目录存放了所有用于代码分析，检查和构建等的脚本。这些脚本可以被开发人员执行，也可以被项目根目录下的 `Makefile` 调用。
 
