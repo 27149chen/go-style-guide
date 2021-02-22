@@ -19,12 +19,12 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 1. package的名字必须是全小写的形式，不能出现 "-"，"_" 等分隔符。[[1](https://golang.org/doc/effective_go.html#package-names)] [[2](https://blog.golang.org/package-names)] [[3](https://rakyll.org/style-packages/)] [[4](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[5](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
 2. package的名字必须是名词，而且应该是单数，包括那些集合性质的package，比如"net/url"，"example"，"image"，"player"。 [[1](https://dmitri.shuralyov.com/idiomatic-go#use-singular-form-for-collection-repo-folder-name)] [[2](https://rakyll.org/style-packages/)] [[3](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
 3. package的名字应该简洁且能体现代码的内容，但需要尽量避免无意义的名称，比如"util"，"common"，"misc"，"api"，"types"和"interfaces"等。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[2](https://golang.org/doc/effective_go.html#package-names)] [[3](https://blog.golang.org/package-names)] [[4](https://rakyll.org/style-packages/)] [[5](https://github.com/uber-go/guide/blob/master/style.md#package-names)]
-4. package的命名和type的命名应该尽量避免冗余。比如应该叫做"controller/autoscaler"而不是"controller/autoscalercontroller"，应该叫做"chubby.File"而不是"chubby.ChubbyFile"，应该叫做"storage.Interface"而不是"storage.StorageInterface"。比如您有一个意义很明确的timer模块，应该定义"timer.New"而不是"timer.NewTimer"。[[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[3](https://blog.golang.org/package-names)]
+4. package的命名和type的命名应该尽量避免冗余。比如应该叫做"controller/autoscaler"而不是"controller/autoscalercontroller"，应该叫做"chubby.File"而不是"chubby.ChubbyFile"，应该叫做"storage.Interface"而不是"storage.StorageInterface"。比如你有一个意义很明确的timer模块，应该定义"timer.New"而不是"timer.NewTimer"。[[1](https://github.com/kubernetes/community/blob/master/contributors/guide/coding-conventions.md)] [[2](https://github.com/golang/go/wiki/CodeReviewComments#package-names)] [[3](https://blog.golang.org/package-names)]
 5. 除非有特殊的理由，go文件中的package的名字应该与他所在的路径的名字一致。比如文件`foo/bar.go`中的第一行，应该是`package foo`。
 6. 在import一个package时，尽量不要定义别名，除非出现冲突。在出现两个包名相同时，优先为the most local or project-specific的package定义别名。[[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
-7. 导入是按组组织的，它们之间有空白行。 标准库软件包始终在第一组中。import应该按照相似原则分组，中间用空行分隔。比如标准库为一组，第三方库为一组，本地库为一组。标准库始终在第一组中（[goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) 和一些IDE会帮您完成这一工作）。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
+7. 导入是按组组织的，它们之间有空白行。 标准库软件包始终在第一组中。import应该按照相似原则分组，中间用空行分隔。比如标准库为一组，第三方库为一组，本地库为一组。标准库始终在第一组中（[goimports](https://godoc.org/golang.org/x/tools/cmd/goimports) 和一些IDE会帮你完成这一工作）。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#imports)]
 8. Go的命名风格是MixedCaps和mixedCaps，不使用下划线式的命名风格。其中前者可在package外被访问，后者只能在package内被访问。
-9. 上一条的命名风格，同样适用于定义常量。比如您应该定义maxLength或者MaxLength，而不是MAX_LENGTH。[[1](https://github.com/golang/go/wiki/CodeReviewComments#mixed-caps)]
+9. 上一条的命名风格，同样适用于定义常量。比如你应该定义maxLength或者MaxLength，而不是MAX_LENGTH。[[1](https://github.com/golang/go/wiki/CodeReviewComments#mixed-caps)]
 10. 对于存在两个以上大写字母的缩写词或者组合词，在需要大写时应该使用惯用写法（而不是首字母大写的写法），在需要小写时应该所有字母都小写。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#initialisms)] [[2](https://dmitri.shuralyov.com/idiomatic-go#for-brands-or-words-with-more-than-1-capital-letter-lowercase-all-letters)]
 
     比如这些都是推荐写法：
@@ -102,7 +102,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
         a = 10
     }
     ```
-4. 使用字段名初始化Struct。初始化Struct时，应该始终指定字段的名称。 您可以通过[`go vet`](https://golang.org/cmd/vet/)来执行这项检查。
+4. 使用字段名初始化Struct。初始化Struct时，应该始终指定字段的名称。 你可以通过[`go vet`](https://golang.org/cmd/vet/)来执行这项检查。
 5. 声明一个空的Slice时不需要初始化。大多数情况下，在定义一个空的Slice时不需要进行初始化，只需保持默认值nil。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices)]
 
      应该：
@@ -118,9 +118,9 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
 
 ## Guidelines
 1. 函数的Receiver究竟是用值还是用指针（`func (t T) foo()` or `func (t *T) foo()`），请遵循这个规范： https://github.com/golang/go/wiki/CodeReviewComments#receiver-type
-2. Map，Slice等常见类型都不是并发安全的，要保证并发安全，请使用lock，channel等手段。您也可以使用`sync.Map`这个并发安全的Map，和`sync/atomic`这个包提供的原子方法。
-3. 当您使用goroutine时，您必须清楚它是否会退出，以及什么时候退出。一般情况下，您应该通过WaitGroup或者channel等方式，在函数返回前等待里面的goroutine先退出。如果您想在函数返回后使里面的goroutine保持运行，您必须通过context或者channel等方式，确保在需要关闭这个goroutine时，可以控制它的关闭。否则，容易造成资源泄露。
-4. 在大多数情况下，请不要使用`_`来忽略一个error，您应该处理或者返回这个error。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#handle-errors)]
+2. Map，Slice等常见类型都不是并发安全的，要保证并发安全，请使用lock，channel等手段。你也可以使用`sync.Map`这个并发安全的Map，和`sync/atomic`这个包提供的原子方法。
+3. 当你使用goroutine时，你必须清楚它是否会退出，以及什么时候退出。一般情况下，你应该通过WaitGroup或者channel等方式，在函数返回前等待里面的goroutine先退出。如果你想在函数返回后使里面的goroutine保持运行，你必须通过context或者channel等方式，确保在需要关闭这个goroutine时，可以控制它的关闭。否则，容易造成资源泄露。
+4. 在大多数情况下，请不要使用`_`来忽略一个error，你应该处理或者返回这个error。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#handle-errors)]
 5. 一个Interface为nil与在这个Interface中含有nil指针不一样。因为一个Interface包含了某个Struct的类型和它的指针，指针为nil只是代表这个Struct还没有初始化（分配内存地址），这个Interface已经不是nil了。
 
     比如：
@@ -226,7 +226,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```
 
 ## Errors
-1. Go中有几种生成error的方式，比如`errors.New`，`fmt.Errorf`和自定义类型等。如果您只需要一个简单的错误字符串，可以用`errors.New`和`fmt.Errorf`，如果您需要在error里面包含更多的信息，可以使用自定义类型。
+1. Go中有几种生成error的方式，比如`errors.New`，`fmt.Errorf`和自定义类型等。如果你只需要一个简单的错误字符串，可以用`errors.New`和`fmt.Errorf`，如果你需要在error里面包含更多的信息，可以使用自定义类型。
 2. 永远不要通过检查错误字符串中的关键字的形式来判断一个特定错误。
 
     如果是通过`errors.New`和`fmt.Errorf`生成的错误，可以把它定义成一个全局的常量，然后直接判断是否相等：
@@ -347,7 +347,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
     ```go
     make([]T, 0, 10)
     ```
-    一般情况下，您不需要指定Map的capacity，但是如果您事先已经可以确定Map中需要存放的key的数量或者需要存放的数量较大，可以指定capacity，比如：
+    一般情况下，你不需要指定Map的capacity，但是如果你事先已经可以确定Map中需要存放的key的数量或者需要存放的数量较大，可以指定capacity，比如：
     ```go
     make(map[T1]T2, 100)
     ```
