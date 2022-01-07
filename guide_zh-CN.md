@@ -102,6 +102,7 @@ Please refer to [Go Project Layout](project_layout_zh-CN.md)
         a = 10
     }
     ```
+
 4. 使用字段名初始化 Struct。初始化 Struct 时，应该始终指定字段的名称。 你可以通过 [`go vet`](https://golang.org/cmd/vet/) 来执行这项检查。
 5. 声明一个空的 Slice 时不需要初始化。大多数情况下，在定义一个空的 Slice 时不需要进行初始化，只需保持默认值 nil。 [[1](https://github.com/golang/go/wiki/CodeReviewComments#declaring-empty-slices)]
 
